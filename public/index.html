@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Graph Analyzer</title>
+    <style>
+        :root {
+            --clr-black: #1a1a1a;
+            --clr-bg: #f5f5f0;
+            --clr-green: #1D9E75;
+            --clr-red: #e24b4a;
+            --clr-amber: #d97706;
+            --clr-muted: #888;
+            --font-mono: 'Courier New', monospace;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: var(--clr-bg);
+            color: var(--clr-black);
+            font-family: var(--font-mono);
+            line-height: 1.6;
+            padding: 40px 20px;
+        }
+
+        .container {
+            max-width: 720px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            font-size: 1.5rem;
+            margin-bottom: 24px;
+            text-align: center;
+        }
+
+        /* --- INPUT SECTION --- */
+        .section {
+            margin-bottom: 40px;
+        }
+
+        textarea {
+            width: 100%;
+            height: 120px;
+            padding: 12px;
+            border: 1px solid var(--clr-black);
+            border-radius: 4px;
+            background: white;
+            font-family: var(--font-mono);
+            font-size: 14px;
+            resize: vertical;
+            outline: none;
+            display: block;
+        }
+
+        textarea:focus {
+            border-width: 2px;
+        }
+
+        .chips-container {
+            margin-top: 12px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .chip {
+            font-size: 12px;
+            padding: 2px 6px;
+            border: 1px solid;
+            border-radius: 4px;
+            white-space: nowrap;
+        }
+
+        .chip.valid { border-color: var(--clr-green); color: var(--clr-green); }
+        .chip.dup { border-color: var(--clr-amber); color: var(--clr-amber); }
+        .chip.invalid { border-color: var(--clr-red); color: var(--clr-red); text-decoration: line-through; }
+
+        .input-summary {
+            font-size: 12px;
+            color: var(--clr-muted);
+            margin-top: 8px;
+        }
+
+        .input-controls {
+            margin-top: 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .try-example {
+            font-size: 13px;
+            color: var(--clr-muted);
+        }
+
+        .try-example span {
+            text-decoration: underline;
+            cursor: pointer;
+            color: var(--clr-black);
+        }
+
+        button {
+            background-color: var(--clr-black);
+            color: white;
+            border: none;
+            border-radius: 4px;
+            padding: 8px 16px;
+            font-family: var(--font-mono);
+            font-size: 14px;
+            cursor: pointer;
+            transition: opacity 150ms;
+        }
+
+        button:hover {
+            opacity: 0.9;
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        /* --- RESULTS SECTION --- */
+        #results-section {
+            display: none;
+            border-top: 1px solid var(--clr-black);
+            padding-top: 40px;
+        }
+
+        .tree-card {
+            border: 1px solid var(--clr-black);
+            border-radius: 4px;
+            background: white;
+            padding: 16px;
+            margin-bottom: 24px;
+        }
+
+        .tree-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .tree-root {
+            font-weight: bold;
+            font-size: 18px;
+        }
+
+        .badge {
+            font-size: 11px;
+            padding: 2px 8px;
+            border-radius: 4px;
+            border: 1px solid;
+        }
+
+        .badge.depth { border-color: var(--clr-green); color: var(--clr-green); }
+        .badge.cyclic { border-color: var(--clr-red); color: var(--clr-red); }
+
+        pre {
+            font-family: var(--font-mono);
+            font-size: 13px;
+            line-height: 1.4;
+            white-space: pre-wrap;
+        }
+
+        .flags-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 32px;
+        }
+
+        .flag-box {
+            border: 1px solid var(--clr-black);
+            border-radius: 4px;
+            padding: 12px;
+        }
+
+        .flag-label {
+            font-size: 12px;
+            font-weight: bold;
+            margin-bottom: 8px;
+            display: block;
+        }
+
+        .summary-bar {
+            border-top: 1px solid var(--clr-black);
+            border-bottom: 1px solid var(--clr-black);
+            padding: 12px 0;
+            display: flex;
+            justify-content: center;
+            gap: 24px;
+            font-size: 14px;
+        }
+
+        .summary-item:not(:last-child)::after {
+            content: "|";
+            margin-left: 24px;
+            color: var(--clr-black);
+        }
+
+        /* --- ERROR BOX --- */
+        #error-box {
+            display: none;
+            border: 1px solid var(--clr-red);
+            color: var(--clr-red);
+            padding: 12px;
+            border-radius: 4px;
+            margin-bottom: 24px;
+            font-size: 14px;
+        }
+
+        @media (max-width: 600px) {
+            .flags-container {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Graph Analyzer</h1>
+
+        <div class="section">
+            <textarea id="edge-input" placeholder="A->B
+A->C
+B->D
+one edge per line, or comma-separated"></textarea>
+            
+            <div class="chips-container" id="chips-container"></div>
+            <div class="input-summary" id="input-summary">0 valid · 0 duplicate · 0 invalid</div>
+
+            <div class="input-controls">
+                <div class="try-example">or <span id="example-btn">try the example</span></div>
+                <button id="analyze-btn">→ Analyze</button>
+            </div>
+        </div>
+
+        <div id="error-box"></div>
+
+        <div id="results-section">
+            <div id="trees-container"></div>
+
+            <div class="flags-container">
+                <div class="flag-box">
+                    <span class="flag-label">Invalid entries</span>
+                    <div id="invalid-flags" class="chips-container"></div>
+                </div>
+                <div class="flag-box">
+                    <span class="flag-label">Duplicate edges</span>
+                    <div id="duplicate-flags" class="chips-container"></div>
+                </div>
+            </div>
+
+            <div class="summary-bar" id="summary-bar"></div>
+        </div>
+    </div>
+
+    <script>
+        const textarea = document.getElementById('edge-input');
+        const chipsContainer = document.getElementById('chips-container');
+        const inputSummary = document.getElementById('input-summary');
+        const analyzeBtn = document.getElementById('analyze-btn');
+        const exampleBtn = document.getElementById('example-btn');
+        const resultsSection = document.getElementById('results-section');
+        const treesContainer = document.getElementById('trees-container');
+        const invalidFlags = document.getElementById('invalid-flags');
+        const duplicateFlags = document.getElementById('duplicate-flags');
+        const summaryBar = document.getElementById('summary-bar');
+        const errorBox = document.getElementById('error-box');
+
+        const EXAMPLE_INPUT = "A->B, A->C, B->D, C->E, E->F, X->Y, Y->Z, Z->X, P->Q, Q->R, G->H, G->H, G->I, hello, 1->2, A->A";
+
+        // --- REAL-TIME PARSING ---
+        textarea.addEventListener('input', () => {
+            const raw = textarea.value;
+            const entries = raw.split(/[,\n]/).map(s => s.trim()).filter(s => s !== "");
+            
+            const seen = new Set();
+            const reportedDups = new Set();
+            let validCount = 0;
+            let dupCount = 0;
+            let invalidCount = 0;
+
+            chipsContainer.innerHTML = '';
+
+            entries.forEach(entry => {
+                const match = entry.match(/^([A-Z])->([A-Z])$/);
+                const chip = document.createElement('div');
+                chip.className = 'chip';
+
+                if (match && match[1] !== match[2]) {
+                    if (seen.has(entry)) {
+                        chip.classList.add('dup');
+                        chip.textContent = entry + ' (dup)';
+                        if (!reportedDups.has(entry)) {
+                            dupCount++;
+                            reportedDups.add(entry);
+                        }
+                    } else {
+                        chip.classList.add('valid');
+                        chip.textContent = entry;
+                        seen.add(entry);
+                        validCount++;
+                    }
+                } else {
+                    chip.classList.add('invalid');
+                    chip.textContent = entry;
+                    invalidCount++;
+                }
+                chipsContainer.appendChild(chip);
+            });
+
+            inputSummary.textContent = `${validCount} valid · ${dupCount} duplicate · ${invalidCount} invalid`;
+        });
+
+        exampleBtn.addEventListener('click', () => {
+            textarea.value = EXAMPLE_INPUT;
+            textarea.dispatchEvent(new Event('input'));
+        });
+
+        // --- SUBMIT ---
+        analyzeBtn.addEventListener('click', async () => {
+            const raw = textarea.value;
+            const edges = raw.split(/[,\n]/).map(s => s.trim()).filter(s => s !== "");
+            
+            if (edges.length === 0) return;
+
+            analyzeBtn.textContent = 'analyzing...';
+            analyzeBtn.disabled = true;
+            errorBox.style.display = 'none';
+
+            try {
+                const res = await fetch('/api/graph', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ edges })
+                });
+                const data = await res.json();
+
+                if (!res.ok) throw new Error(data.error || 'API failed');
+
+                renderResults(data);
+            } catch (err) {
+                errorBox.textContent = `API error: ${err.message}`;
+                errorBox.style.display = 'block';
+                resultsSection.style.display = 'none';
+            } finally {
+                analyzeBtn.textContent = '→ Analyze';
+                analyzeBtn.disabled = false;
+            }
+        });
+
+        function renderResults(data) {
+            resultsSection.style.display = 'block';
+            treesContainer.innerHTML = '';
+            
+            data.hierarchies.forEach(h => {
+                const card = document.createElement('div');
+                card.className = 'tree-card';
+                
+                const header = document.createElement('div');
+                header.className = 'tree-header';
+                header.innerHTML = `
+                    <span class="tree-root">${h.root}</span>
+                    <span class="badge ${h.has_cycle ? 'cyclic' : 'depth'}">
+                        ${h.has_cycle ? 'cyclic' : 'depth: ' + h.depth}
+                    </span>
+                `;
+                
+                const treePre = document.createElement('pre');
+                if (h.has_cycle) {
+                    treePre.textContent = '(cycle detected — no tree structure)';
+                    treePre.style.color = 'var(--clr-muted)';
+                } else {
+                    treePre.textContent = buildTextTree(h.tree);
+                }
+
+                card.appendChild(header);
+                card.appendChild(treePre);
+                treesContainer.appendChild(card);
+            });
+
+            // Flags
+            renderFlags(invalidFlags, data.invalid_entries, 'invalid');
+            renderFlags(duplicateFlags, data.duplicate_edges, 'dup');
+
+            // Summary Bar
+            summaryBar.innerHTML = `
+                <span class="summary-item">${data.summary.total_trees} trees</span>
+                <span class="summary-item">${data.summary.total_cycles} cycles</span>
+                <span class="summary-item">largest: ${data.summary.largest_tree_root || 'none'}</span>
+            `;
+
+            // Scroll to results
+            resultsSection.scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function renderFlags(container, list, type) {
+            container.innerHTML = '';
+            if (list.length === 0) {
+                container.innerHTML = '<span style="color:var(--clr-muted);font-size:12px;">none</span>';
+                return;
+            }
+            list.forEach(item => {
+                const chip = document.createElement('div');
+                chip.className = `chip ${type}`;
+                chip.textContent = item;
+                container.appendChild(chip);
+            });
+        }
+
+        // --- TREE BUILDER ---
+        function buildTextTree(tree, prefix = '') {
+            const keys = Object.keys(tree);
+            if (keys.length === 0) return '';
+            
+            const root = keys[0];
+            let result = root + '\n';
+            
+            const children = Object.keys(tree[root]).sort();
+            children.forEach((child, index) => {
+                const isLast = index === children.length - 1;
+                const connector = isLast ? '└── ' : '├── ';
+                const childPrefix = isLast ? '    ' : '│   ';
+                
+                const subTree = buildTextTree({ [child]: tree[root][child] }, prefix + childPrefix);
+                const subTreeLines = subTree.split('\n');
+                
+                // First line of subtree gets the connector
+                result += prefix + connector + subTreeLines[0] + '\n';
+                
+                // Remaining lines of subtree get the child prefix
+                for (let i = 1; i < subTreeLines.length; i++) {
+                    if (subTreeLines[i].trim()) {
+                        result += prefix + childPrefix + subTreeLines[i] + '\n';
+                    }
+                }
+            });
+            
+            return result.trim();
+        }
+    </script>
+</body>
+</html>
