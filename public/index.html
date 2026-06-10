@@ -207,6 +207,27 @@
             color: var(--clr-black);
         }
 
+        /* --- JSON VIEW --- */
+        #json-view {
+            display: none;
+            margin-top: 24px;
+            border: 1px solid var(--clr-black);
+            background: #fff;
+            padding: 16px;
+            border-radius: 4px;
+            max-height: 400px;
+            overflow: auto;
+        }
+
+        .json-toggle {
+            text-align: center;
+            margin-top: 24px;
+            font-size: 13px;
+            text-decoration: underline;
+            cursor: pointer;
+            color: var(--clr-muted);
+        }
+
         /* --- ERROR BOX --- */
         #error-box {
             display: none;
@@ -261,6 +282,9 @@ one edge per line, or comma-separated"></textarea>
             </div>
 
             <div class="summary-bar" id="summary-bar"></div>
+
+            <div class="json-toggle" id="json-toggle">View Raw API Response</div>
+            <pre id="json-view"></pre>
         </div>
     </div>
 
@@ -276,6 +300,8 @@ one edge per line, or comma-separated"></textarea>
         const duplicateFlags = document.getElementById('duplicate-flags');
         const summaryBar = document.getElementById('summary-bar');
         const errorBox = document.getElementById('error-box');
+        const jsonToggle = document.getElementById('json-toggle');
+        const jsonView = document.getElementById('json-view');
 
         const EXAMPLE_INPUT = "A->B, A->C, B->D, C->E, E->F, X->Y, Y->Z, Z->X, P->Q, Q->R, G->H, G->H, G->I, hello, 1->2, A->A";
 
@@ -401,9 +427,24 @@ one edge per line, or comma-separated"></textarea>
                 <span class="summary-item">largest: ${data.summary.largest_tree_root || 'none'}</span>
             `;
 
+            // JSON View
+            jsonView.textContent = JSON.stringify(data, null, 2);
+            jsonView.style.display = 'none';
+            jsonToggle.textContent = 'View Raw API Response';
+
             // Scroll to results
             resultsSection.scrollIntoView({ behavior: 'smooth' });
         }
+
+        jsonToggle.addEventListener('click', () => {
+            if (jsonView.style.display === 'none') {
+                jsonView.style.display = 'block';
+                jsonToggle.textContent = 'Hide Raw API Response';
+            } else {
+                jsonView.style.display = 'none';
+                jsonToggle.textContent = 'View Raw API Response';
+            }
+        });
 
         function renderFlags(container, list, type) {
             container.innerHTML = '';
