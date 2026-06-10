@@ -369,7 +369,12 @@ one edge per line, or comma-separated"></textarea>
                 const res = await fetch('/api/graph', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ edges })
+                    body: JSON.stringify({ 
+                        edges,
+                        user_id: "mahi20040322",
+                        email_id: "mahi.sharma.btech2023@sitpune.edu.in",
+                        enrollment_number: "23070122128"
+                    })
                 });
                 const data = await res.json();
 

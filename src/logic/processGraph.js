@@ -4,7 +4,7 @@
  * @param {string[]} edges - Array of strings in "X->Y" format.
  * @returns {Object} - Result object with hierarchies, invalid entries, duplicates, and summary.
  */
-const processGraph = (edges) => {
+const processGraph = (edges, { user_id, email_id, enrollment_number } = {}) => {
   const invalid_entries = [];
   const duplicate_edges = [];
   const unique_valid_edges = [];
@@ -187,9 +187,9 @@ const processGraph = (edges) => {
   });
 
   return {
-    user_id: "your_user_id", // To be filled by user
-    email_id: "your_email@example.com", // To be filled by user
-    enrollment_number: "your_enrollment_number", // To be filled by user
+    user_id: user_id || "mahi20040322",
+    email_id: email_id || "mahi.sharma.btech2023@sitpune.edu.in",
+    enrollment_number: enrollment_number || "23070122128",
     hierarchies,
     invalid_entries,
     duplicate_edges,
