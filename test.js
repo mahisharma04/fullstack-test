@@ -33,6 +33,16 @@ const runTests = () => {
       name: "5. largest_tree_root tiebreaker (lex smaller root)",
       input: ["B->C", "A->D"], // Both depth 2. A < B.
       check: (res) => res.summary.largest_tree_root === "A"
+    },
+    {
+      name: "6. Case insensitivity (accept lowercase, normalize to uppercase)",
+      input: ["a->b", "b->c", "A->C"], // a->b valid, b->c valid, A->C should NOT be duplicate (different edge)
+      check: (res) => res.hierarchies.some(h => h.root === 'A') && res.duplicate_edges.length === 0 && res.hierarchies.some(h => h.root === 'A' && h.depth === 3)
+    },
+    {
+      name: "7. Case insensitivity duplicate (a->b and A->B are same)",
+      input: ["a->b", "A->B"], // a->b and A->B should be considered duplicate
+      check: (res) => res.duplicate_edges.length === 1 && res.hierarchies.some(h => h.root === 'A')
     }
   ];
 

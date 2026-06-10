@@ -293,22 +293,23 @@ one edge per line, or comma-separated"></textarea>
             chipsContainer.innerHTML = '';
 
             entries.forEach(entry => {
-                const match = entry.match(/^([A-Z])->([A-Z])$/);
+                const match = entry.match(/^([a-zA-Z])->([a-zA-Z])$/);
                 const chip = document.createElement('div');
                 chip.className = 'chip';
 
-                if (match && match[1] !== match[2]) {
-                    if (seen.has(entry)) {
+                if (match && match[1].toUpperCase() !== match[2].toUpperCase()) {
+                    const normalized = `${match[1].toUpperCase()}->${match[2].toUpperCase()}`;
+                    if (seen.has(normalized)) {
                         chip.classList.add('dup');
                         chip.textContent = entry + ' (dup)';
-                        if (!reportedDups.has(entry)) {
+                        if (!reportedDups.has(normalized)) {
                             dupCount++;
-                            reportedDups.add(entry);
+                            reportedDups.add(normalized);
                         }
                     } else {
                         chip.classList.add('valid');
                         chip.textContent = entry;
-                        seen.add(entry);
+                        seen.add(normalized);
                         validCount++;
                     }
                 } else {

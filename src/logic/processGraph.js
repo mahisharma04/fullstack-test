@@ -20,27 +20,30 @@ const processGraph = (edges) => {
       }
 
       const trimmed = rawEdge.trim();
-      const match = trimmed.match(/^([A-Z])->([A-Z])$/);
+      const match = trimmed.match(/^([a-zA-Z])->([a-zA-Z])$/);
 
       if (!match) {
         invalid_entries.push(trimmed);
         return;
       }
 
-      const [_, start, end] = match;
+      const [_, rawStart, rawEnd] = match;
+      const start = rawStart.toUpperCase();
+      const end = rawEnd.toUpperCase();
+      const normalizedEdge = `${start}->${end}`;
 
       if (start === end) {
         invalid_entries.push(trimmed);
         return;
       }
 
-      if (seen_edges.has(trimmed)) {
-        if (!reported_duplicates.has(trimmed)) {
+      if (seen_edges.has(normalizedEdge)) {
+        if (!reported_duplicates.has(normalizedEdge)) {
           duplicate_edges.push(trimmed);
-          reported_duplicates.add(trimmed);
+          reported_duplicates.add(normalizedEdge);
         }
       } else {
-        seen_edges.add(trimmed);
+        seen_edges.add(normalizedEdge);
         unique_valid_edges.push({ from: start, to: end, raw: trimmed });
       }
     });
